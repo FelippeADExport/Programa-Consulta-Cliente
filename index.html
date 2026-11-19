@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>AD EXPORT</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#222529">
+<script>
+// Aplica o tema salvo antes de desenhar a página (a tela de abertura já sai no tema certo)
+try { if (localStorage.getItem('adcliente_theme') === 'light') document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}
+</script>
+</head>
+<body>
+<div id="loader">
+  <div class="loader-logo">
+    <img class="logo-escuro" src="icons/logo-escuro.png" alt="AD Export">
+    <img class="logo-claro" src="icons/logo-claro.png" alt="AD Export">
+  </div>
+  <div class="loader-text" id="loaderMsg">...</div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+</div>
+
+<div id="app">
+  <!-- ==================== BARRA SUPERIOR ==================== -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <img class="logo-escuro" src="icons/logo-escuro.png" alt="AD Export">
+        <img class="logo-claro" src="icons/logo-claro.png" alt="AD Export">
+      </div>
+      <span class="topbar-sub" data-t="appSub"></span>
+    </div>
+    <div class="topbar-right">
+      <div class="lang-switch">
+        <button id="lang-pt" onclick="setLang('pt')">PT</button>
+        <button id="lang-es" onclick="setLang('es')">ES</button>
+        <button id="lang-en" onclick="setLang('en')">EN</button>
+      </div>
+      <button class="top-btn top-icon" id="btnRefresh" onclick="refreshProdutos()"><span>↻</span></button>
+      <button class="top-btn top-icon" id="themeToggle" onclick="toggleTheme()"><span id="themeIcon">☀️</span></button>
+    </div>
+  </header>
+
+  <!-- ==================== CONSULTA ==================== -->
+  <div class="main">
+    <div class="page-head">
+      <h1 class="page-title" data-t="title"></h1>
+      <div class="page-sub" data-t="subtitle"></div>
+    </div>
+
+    <!-- Filtros -->
+    <section class="section">
+      <div class="section-body">
+        <div class="grid grid-3">
+          <div>
+            <label for="cns-formato" data-t="formato"></label>
+            <select id="cns-formato" onchange="cnsOnFormatoChange()"></select>
+          </div>
+          <div>
+            <label for="cns-nome" data-t="nome"></label>
+            <select id="cns-nome" onchange="cnsOnNomeChange()" disabled></select>
+          </div>
+          <div>
+            <label for="cns-codigo" data-t="codigo"></label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="cns-codigo" autocomplete="off" oninput="cnsOnCodigoInput()">
+              <div class="autocomplete-list hidden" id="cns-codigo-dd"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resultado -->
+    <div id="cns-resultado" class="hidden">
+      <div class="cns-layout">
+        <div class="cns-galeria">
+          <div class="cns-foto-main" onclick="zoomOpen()">
+            <img id="cns-foto" alt="" onerror="fotoFallback(this)">
+            <div id="cns-foto-ph" class="sem-foto" data-t="semFoto"></div>
+          </div>
+          <div class="cns-thumbs" id="cns-thumbs"></div>
+          <button class="btn btn-secondary btn-block hidden" id="btnDl" onclick="baixarFoto(this)"><span data-t="baixar"></span></button>
+        </div>
+
+        <div class="cns-info">
+          <div class="info-card">
+            <h2 class="info-card-title" data-t="identificacao"></h2>
+            <div class="info-grid">
+              <div><div class="info-label" data-t="formato"></div><div class="info-val destaque" id="r-formato">—</div></div>
+              <div><div class="info-label" data-t="codigo"></div><div class="info-val destaque" id="r-codigo">—</div></div>
+              <div><div class="info-label" data-t="barcode"></div><div class="info-val" id="r-barcode">—</div></div>
+              <div><div class="info-label" data-t="referencia"></div><div class="info-val" id="r-nome">—</div></div>
+            </div>
+          </div>
+          <div class="info-card">
+            <h2 class="info-card-title" data-t="caracteristicas"></h2>
+            <div class="info-grid">
+              <div><div class="info-label" data-t="face"></div><div class="info-val" id="r-face">—</div></div>
+              <div><div class="info-label" data-t="localUso"></div><div class="info-val" id="r-local">—</div></div>
+              <div><div class="info-label" data-t="vt"></div><div class="info-val" id="r-vt">—</div></div>
+              <div><div class="info-label" data-t="espessura"></div><div class="info-val" id="r-thick">—</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="pack-wrap" class="cns-secao">
+        <h2 class="cns-secao-title" data-t="packTitle"></h2>
+        <div class="cns-pack-tabs" id="pack-tabs"></div>
+        <div class="cns-pack-3" id="pack-box"></div>
+      </div>
+    </div>
+
+    <!-- Estado vazio -->
+    <div id="cns-empty" class="cns-empty">
+      <strong data-t="emptyT"></strong>
+      <span data-t="emptyS"></span>
+    </div>
+
+    <!-- Legenda Local de Uso -->
+    <div class="cns-secao">
+      <h2 class="cns-secao-title" data-t="legenda"></h2>
+      <div class="legenda-grid" id="legend-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ZOOM DA FOTO ==================== -->
+<div id="zoom" onclick="if(event.target===this)zoomClose()">
+  <button class="z-btn z-nav" id="zPrev" onclick="zoomNav(-1)">&#8249;</button>
+  <img id="zImg" alt="" onerror="fotoFallback(this)">
+  <button class="z-btn z-nav" id="zNext" onclick="zoomNav(1)">&#8250;</button>
+  <div id="zCount"></div>
+  <button class="z-btn" id="zDl" onclick="baixarFoto(this)"><span data-t="baixar"></span></button>
+  <button class="z-btn" id="zClose" onclick="zoomClose()">&#x2715;</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Ordem importa: api.js cria o google.script.run usado pelos outros -->
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/idiomas.js"></script>
+<script src="js/app.js"></script>
+<script src="js/consulta.js"></script>
+<script src="js/fotos.js"></script>
+</body>
+</html>
